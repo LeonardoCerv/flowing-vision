@@ -9,7 +9,6 @@ import cv2
 import numpy as np
 from openvino import Core
 import base64
-import json
 import time
 from datetime import datetime
 import os
@@ -31,7 +30,7 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff'}
 
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # Global variables for model and database
 compiled_model = None

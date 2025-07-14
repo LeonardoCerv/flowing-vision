@@ -7,71 +7,120 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-bg: #ffffff;
+            --secondary-bg: #ffffff;
+            --tertiary-bg: #f6f6f6;
+            --accent-color: #007aff;
+            --accent-hover: #0051d0;
+            --primary-text: #1d1d1f;
+            --secondary-text: #6e6e73;
+            --tertiary-text: #8e8e93;
+            --border-light: #d1d1d6;
+            --border-medium: #c7c7cc;
+            --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-medium: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.06);
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --system-font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
+        }
+        
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            box-sizing: border-box;
+        }
+        
         body {
-            background: #f8f9fa;
+            background: var(--primary-bg);
             min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: var(--system-font);
+            color: var(--primary-text);
+            line-height: 1.5;
+            font-weight: 400;
+            font-size: 15px;
         }
         
         .main-container {
-            padding: 2rem 0;
+            padding: 32px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
         }
         
         .card {
-            background: #ffffff;
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            box-shadow: var(--shadow-soft);
         }
         
         .detection-mode-tabs {
-            margin-bottom: 1.5rem;
+            margin-bottom: 32px;
+            position: relative;
         }
         
         .detection-mode-tabs .nav-pills {
-            background: #f8f9fa;
-            border-radius: 8px;
+            background: var(--tertiary-bg);
+            border-radius: var(--radius-md);
             padding: 4px;
             display: inline-flex;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-light);
         }
         
         .detection-mode-tabs .nav-pills .nav-link {
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             margin: 0;
             font-weight: 500;
-            padding: 0.5rem 1rem;
-            color: #6c757d;
+            padding: 12px 20px;
+            color: var(--secondary-text);
             background: transparent;
             border: none;
             transition: all 0.2s ease;
-            font-size: 0.9rem;
+            font-size: 14px;
+            position: relative;
+            text-align: center;
+            min-width: 120px;
         }
         
         .detection-mode-tabs .nav-pills .nav-link.active {
-            background: #ffffff;
-            color: #495057;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: var(--secondary-bg);
+            color: var(--primary-text);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            font-weight: 600;
         }
         
         .detection-mode-tabs .nav-pills .nav-link:hover:not(.active) {
-            color: #495057;
+            color: var(--primary-text);
+            background: rgba(0, 0, 0, 0.02);
         }
         
         .video-status-bar {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.8);
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            background: rgba(29, 29, 31, 0.8);
             color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.85rem;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             z-index: 10;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            font-weight: 500;
         }
         
         .video-status-bar .status-item:nth-child(2) {
@@ -83,113 +132,119 @@
         .status-item {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
         
         .status-badge {
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 500;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .status-badge.success {
-            background: #28a745;
+            background: var(--tertiary-text);
             color: white;
         }
         
         .status-badge.danger {
-            background: #dc3545;
+            background: #ff3b30;
             color: white;
         }
         
         .status-badge.warning {
-            background: #ffc107;
-            color: #212529;
+            background: var(--secondary-text);
+            color: white;
         }
         
         .status-badge.info {
-            background: #17a2b8;
+            background: var(--accent-color);
             color: white;
         }
         
         .detection-log {
-            margin-top: 1rem;
+            margin-top: 24px;
         }
         
         .detection-log-header {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 6px 6px 0 0;
-            padding: 8px 12px;
+            background: var(--tertiary-bg);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+            padding: 12px 16px;
             cursor: pointer;
             user-select: none;
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--primary-text);
+            transition: all 0.2s ease;
         }
         
         .detection-log-header:hover {
-            background: #e9ecef;
+            background: var(--border-light);
         }
         
         .detection-log-content {
-            border: 1px solid #dee2e6;
+            border: 1px solid var(--border-light);
             border-top: none;
-            border-radius: 0 0 6px 6px;
+            border-radius: 0 0 var(--radius-sm) var(--radius-sm);
             max-height: 200px;
             overflow-y: auto;
-            background: white;
+            background: var(--secondary-bg);
         }
         
         .detection-entry {
-            padding: 8px 12px;
-            border-bottom: 1px solid #f1f3f4;
-            font-size: 0.85rem;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 13px;
+            transition: all 0.2s ease;
         }
         
         .detection-entry:last-child {
             border-bottom: none;
         }
         
+        .detection-entry:hover {
+            background: var(--tertiary-bg);
+        }
+        
         .detection-entry.leak {
-            background: #fff5f5;
-            border-left: 3px solid #dc3545;
+            background: rgba(255, 59, 48, 0.05);
+            border-left: 3px solid #ff3b30;
         }
         
         .detection-entry.no-leak {
-            background: #f0f9ff;
-            border-left: 3px solid #28a745;
+            background: rgba(110, 110, 115, 0.05);
+            border-left: 3px solid var(--secondary-text);
         }
         
-        .detection-time {
-            color: #6c757d;
-            font-size: 0.75rem;
-        }
-        
-        .detection-filename {
-            color: #6c757d;
-            font-size: 0.75rem;
+        .detection-time, .detection-filename {
+            color: var(--secondary-text);
+            font-size: 12px;
             font-weight: 500;
         }
         
         .detection-confidence {
             font-weight: 600;
-            color: #dc3545;
+            color: #ff3b30;
         }
         
         .detection-details {
             margin-top: 8px;
             padding-top: 8px;
-            border-top: 1px solid #e9ecef;
+            border-top: 1px solid var(--border-light);
         }
         
         .detection-item {
-            margin-bottom: 6px;
-            padding: 6px;
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 4px;
-            font-size: 0.8rem;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: var(--tertiary-bg);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
         }
         
         .detection-item:last-child {
@@ -197,7 +252,7 @@
         }
         
         .detection-item small {
-            color: #6c757d;
+            color: var(--secondary-text);
         }
         
         #videoElement {
@@ -217,213 +272,474 @@
         
         .detection-box {
             position: absolute;
-            border: 3px solid #ff0000;
-            background: rgba(255, 0, 0, 0.1);
-            border-radius: 5px;
+            border: 2px solid #ff3b30;
+            background: rgba(255, 59, 48, 0.1);
+            border-radius: var(--radius-sm);
+            animation: pulseDetection 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulseDetection {
+            0%, 100% { 
+                opacity: 1;
+            }
+            50% { 
+                opacity: 0.7;
+            }
         }
         
         .detection-label {
             position: absolute;
-            top: -25px;
+            top: -24px;
             left: 0;
-            background: #ff0000;
+            background: #ff3b30;
             color: white;
-            padding: 2px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .upload-area {
-            border: 2px dashed #007bff;
-            border-radius: 10px;
-            padding: 3rem 2rem;
+            border: 2px dashed var(--border-medium);
+            border-radius: var(--radius-lg);
+            padding: 48px 24px;
             text-align: center;
-            background: #f8f9fa;
-            transition: all 0.3s ease;
+            background: var(--tertiary-bg);
+            transition: all 0.2s ease;
             cursor: pointer;
         }
         
         .upload-area:hover {
-            border-color: #0056b3;
-            background: #e3f2fd;
+            border-color: var(--accent-color);
+            background: rgba(0, 122, 255, 0.02);
         }
         
         .upload-area.dragover {
-            border-color: #28a745;
-            background: #d4edda;
+            border-color: var(--accent-color);
+            background: rgba(0, 122, 255, 0.04);
         }
         
         .upload-icon {
-            font-size: 3rem;
-            color: #007bff;
-            margin-bottom: 1rem;
+            font-size: 2.5rem;
+            color: var(--accent-color);
+            margin-bottom: 16px;
+            display: inline-block;
+        }
+        
+        .upload-area h4 {
+            font-weight: 600;
+            color: var(--primary-text);
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+        
+        .upload-area p {
+            color: var(--secondary-text);
+            font-size: 13px;
+            margin-bottom: 4px;
+            font-weight: 400;
         }
         
         .image-preview {
             max-width: 100%;
             max-height: 400px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-soft);
         }
         
         .queue-indicator {
-            background: linear-gradient(45deg, #ffc107, #fd7e14);
+            background: var(--accent-color);
             color: white;
-            padding: 10px 20px;
+            padding: 12px 20px;
             border-radius: 20px;
-            font-weight: bold;
+            font-weight: 600;
             display: inline-block;
-            margin: 10px 0;
+            margin: 12px 0;
+            font-size: 12px;
         }
         
         .queue-indicator.waiting {
-            background: linear-gradient(45deg, #dc3545, #e83e8c);
+            background: var(--secondary-text);
         }
         
         .status-indicator {
-            width: 12px;
-            height: 12px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             display: inline-block;
             margin-right: 8px;
         }
         
         .status-connected {
-            background-color: #28a745;
-            box-shadow: 0 0 5px #28a745;
+            background-color: var(--accent-color);
         }
         
         .status-disconnected {
-            background-color: #dc3545;
-            box-shadow: 0 0 5px #dc3545;
+            background-color: var(--secondary-text);
         }
         
         .status-processing {
-            background-color: #ffc107;
-            box-shadow: 0 0 5px #ffc107;
-            animation: pulse 1s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+            background-color: var(--tertiary-text);
         }
         
         .sidebar-card {
-            background: #ffffff;
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-card);
+            transition: all 0.2s ease;
+        }
+        
+        .sidebar-card:hover {
+            box-shadow: var(--shadow-soft);
         }
         
         .sidebar-card h6 {
-            margin-bottom: 1rem;
-            color: #495057;
+            margin-bottom: 16px;
+            color: var(--primary-text);
             font-weight: 600;
             display: flex;
             align-items: center;
             gap: 8px;
+            font-size: 14px;
+        }
+        
+        .sidebar-card h6 i {
+            width: 16px;
+            text-align: center;
+            color: var(--secondary-text);
         }
         
         .stats-number {
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            line-height: 1;
+            color: var(--accent-color);
         }
         
         .btn-primary {
-            background: #007bff;
+            background: var(--accent-color);
             border: none;
-            border-radius: 5px;
-            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            padding: 12px 24px;
             font-weight: 600;
-            transition: transform 0.2s;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            color: white;
         }
         
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background: var(--accent-hover);
+            color: white;
+        }
+        
+        .btn-primary:focus {
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.25);
+            outline: none;
         }
         
         .btn-danger {
-            background: #dc3545;
+            background: var(--primary-text);
             border: none;
-            border-radius: 5px;
-            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            padding: 12px 24px;
             font-weight: 600;
-            transition: transform 0.2s;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            color: white;
         }
         
         .btn-danger:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background: var(--secondary-text);
+            color: white;
+        }
+        
+        .btn-danger:focus {
+            box-shadow: 0 0 0 3px rgba(29, 29, 31, 0.25);
+            outline: none;
+        }
+        
+        .btn-secondary {
+            background: var(--tertiary-bg);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 12px 24px;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--primary-text);
+            transition: all 0.2s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: var(--border-light);
+            color: var(--primary-text);
+        }
+        
+        .btn-secondary:focus {
+            box-shadow: 0 0 0 3px rgba(134, 134, 139, 0.25);
+            outline: none;
         }
         
         .alert {
-            border-radius: 5px;
-            border: 1px solid #dee2e6;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+            padding: 16px 20px;
+            font-weight: 500;
+            font-size: 14px;
         }
         
+        .alert-success {
+            background: rgba(110, 110, 115, 0.1);
+            color: var(--primary-text);
+            border-color: var(--border-light);
+        }
+        
+        .alert-danger {
+            background: rgba(29, 29, 31, 0.1);
+            color: var(--primary-text);
+            border-color: var(--border-medium);
+        }
+        
+        .alert-warning {
+            background: rgba(110, 110, 115, 0.1);
+            color: var(--primary-text);
+            border-color: var(--border-light);
+        }
+        
+        .alert-info {
+            background: rgba(0, 122, 255, 0.1);
+            color: var(--primary-text);
+            border-color: rgba(0, 122, 255, 0.3);
+        }
+        
+        /* Header improvements */
         .header-title {
-            color: #343a40;
-            text-align: center;
-            margin-bottom: 2rem;
+            color: var(--primary-text);
+            position: relative;
         }
         
-        .permission-modal {
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(5px);
+        .header-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 2px;
+            background: var(--accent-color);
+            border-radius: 1px;
+        }
+        
+        .permission-modal, .modal {
+            background: rgba(29, 29, 31, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        
+        .modal-content {
+            border: none;
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-medium);
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-light);
+        }
+        
+        .modal-header {
+            border-bottom: 1px solid var(--border-light);
+            padding: 20px 24px 16px;
+            background: var(--tertiary-bg);
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        }
+        
+        .modal-body {
+            padding: 16px 24px;
+        }
+        
+        .modal-footer {
+            border-top: 1px solid var(--border-light);
+            padding: 16px 24px 20px;
+            background: var(--tertiary-bg);
+            border-radius: 0 0 var(--radius-xl) var(--radius-xl);
         }
         
         .leak-frames-indicator {
-            background: linear-gradient(90deg, #ff6b35, #f7931e);
+            background: #ff3b30;
             color: white;
             padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: bold;
+            border-radius: 16px;
+            font-weight: 600;
             display: inline-block;
-            margin-top: 10px;
+            margin-top: 12px;
+            font-size: 11px;
+            text-transform: uppercase;
         }
         
         .session-time {
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: #007bff;
+            font-family: var(--system-font);
+            font-weight: 700;
+            font-size: 24px;
+            color: var(--accent-color);
         }
         
         .live-users-display {
-            font-size: 1.1rem;
+            font-size: 14px;
             font-weight: 600;
         }
         
         .video-container {
             position: relative;
-            background: #000;
-            border-radius: 10px;
+            background: #000000;
+            border-radius: var(--radius-lg);
             overflow: hidden;
             aspect-ratio: 16/9;
             max-width: 100%;
+            box-shadow: var(--shadow-soft);
+        }
+        
+        .badge {
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 11px;
+            padding: 6px 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .bg-info {
+            background: var(--accent-color) !important;
+        }
+        
+        .bg-danger {
+            background: #ff3b30 !important;
+        }
+        
+        .bg-success {
+            background: var(--secondary-text) !important;
+        }
+        
+        .bg-warning {
+            background: var(--tertiary-text) !important;
+        }
+        
+        .text-warning {
+            color: var(--tertiary-text) !important;
+        }
+        
+        .text-success {
+            color: var(--secondary-text) !important;
+        }
+        
+        .text-muted {
+            color: var(--secondary-text) !important;
+        }
+        
+        .text-primary {
+            color: var(--accent-color) !important;
+        }
+        
+        .text-info {
+            color: var(--accent-color) !important;
+        }
+        
+        .progress {
+            height: 6px;
+            border-radius: 3px;
+            background-color: var(--border-light);
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            border-radius: 3px;
+            background: var(--accent-color);
+        }
+        
+        small {
+            font-size: 12px;
+            color: var(--secondary-text);
+            font-weight: 400;
+        }
+        
+        /* Enhanced scrollbar */
+        .detection-log-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .detection-log-content::-webkit-scrollbar-track {
+            background: var(--border-light);
+            border-radius: 2px;
+        }
+        
+        .detection-log-content::-webkit-scrollbar-thumb {
+            background: var(--secondary-text);
+            border-radius: 2px;
+        }
+        
+        .detection-log-content::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-text);
+        }
+        
+        /* Responsive enhancements */
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 20px 16px;
+            }
+            
+            .card {
+                border-radius: var(--radius-md);
+            }
+            
+            .sidebar-card {
+                padding: 16px;
+                margin-bottom: 12px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container main-container">
+        <!-- Header Section with Description -->
+        <div class="text-center mb-5">
+            <h1 class="header-title display-4 mb-4">Flowing Vision</h1>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <h5 class="mb-3 text-secondary">
+                        AI-Powered Leak Detection System
+                    </h5>
+                    <p class="text-muted mb-4" style="font-size: 16px; line-height: 1.6;">
+                        Advanced computer vision technology to detect water leaks in real-time using your camera or uploaded images. 
+                        Our AI model analyzes visual patterns to identify potential leaks with high accuracy, helping prevent water damage and costly repairs.
+                    </p>
+                    
+                    <p class="text-muted" style="font-size: 14px;">
+                        <i class="fas fa-shield-alt text-primary me-2"></i>
+                        All processing happens locally. Your images and video are not stored or transmitted to external servers.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
         <!-- Detection Mode Tabs -->
         <div class="detection-mode-tabs d-flex justify-content-center">
             <ul class="nav nav-pills" id="detectionTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="live-tab" data-bs-toggle="pill" data-bs-target="#live-detection" type="button" role="tab">
-                        <i class="fas fa-video me-1"></i> Live Detection
+                    <button class="nav-link active" id="live-tab" data-bs-toggle="pill" data-bs-target="#live-detection" type="button" role="tab" 
+                            title="Real-time leak detection using your camera">
+                        <i class="fas fa-video me-2"></i> 
+                        <span>Live Detection</span>
+                        <small class="d-block opacity-75" style="font-size: 10px; margin-top: 2px;">Real-time monitoring</small>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="upload-tab" data-bs-toggle="pill" data-bs-target="#image-upload" type="button" role="tab">
-                        <i class="fas fa-upload me-1"></i> Image Upload
+                    <button class="nav-link" id="upload-tab" data-bs-toggle="pill" data-bs-target="#image-upload" type="button" role="tab"
+                            title="Upload and analyze static images for leaks">
+                        <i class="fas fa-upload me-2"></i> 
+                        <span>Image Upload</span>
+                        <small class="d-block opacity-75" style="font-size: 10px; margin-top: 2px;">Instant analysis</small>
                     </button>
                 </li>
             </ul>
@@ -466,12 +782,14 @@
                                     <canvas id="hiddenCanvas" style="display: none;"></canvas>
                                 </div>
                                 
-                                <div class="d-flex justify-content-center gap-3 mt-3">
-                                    <button id="startBtn" class="btn btn-primary">
-                                        <i class="fas fa-play"></i> Start Detection
+                                <div class="d-flex justify-content-center gap-3 mt-4">
+                                    <button id="startBtn" class="btn btn-primary d-flex align-items-center gap-2">
+                                        <i class="fas fa-play"></i> 
+                                        <span>Start Detection</span>
                                     </button>
-                                    <button id="stopBtn" class="btn btn-danger" style="display: none;">
-                                        <i class="fas fa-stop"></i> Stop Detection
+                                    <button id="stopBtn" class="btn btn-danger d-flex align-items-center gap-2" style="display: none;">
+                                        <i class="fas fa-stop"></i> 
+                                        <span>Stop Detection</span>
                                     </button>
                                 </div>
                                 
@@ -495,14 +813,14 @@
                     <div class="col-lg-4">
                         <!-- Session Info -->
                         <div class="sidebar-card">
-                            <h6><i class="fas fa-clock"></i> Session Info</h6>
+                            <h6><i class="fas fa-clock text-primary"></i> Session Info</h6>
                             <div class="mb-3">
                                 <strong>Session Time:</strong>
                                 <div class="session-time" id="sessionTime">00:00:00</div>
                             </div>
                             <div>
                                 <strong>Live Users:</strong>
-                                <div class="live-users-display">
+                                <div class="live-users-display mt-2">
                                     <span class="badge bg-info" id="liveUsersStatusSidebar">0/5</span>
                                 </div>
                             </div>
@@ -510,7 +828,7 @@
                         
                         <!-- Statistics -->
                         <div class="sidebar-card">
-                            <h6><i class="fas fa-chart-bar"></i> Detection Stats</h6>
+                            <h6><i class="fas fa-chart-bar text-success"></i> Detection Stats</h6>
                             <div class="row">
                                 <div class="col-6 text-center">
                                     <div class="stats-number text-warning" id="currentFrames">0</div>
@@ -587,16 +905,28 @@
                     <!-- Upload Results Sidebar -->
                     <div class="col-lg-4">
                         <div class="sidebar-card">
-                            <h6><i class="fas fa-info-circle"></i> Upload Info</h6>
+                            <p class="d-flex align-items-center mb-4 text-danger">
+                                    Remember to stop the live feed detection before uploading an image.
+                                </p>
+                            <h6><i class="fas fa-info-circle text-info"></i> Upload Info</h6>
                             <div class="text-muted">
-                                <p><i class="fas fa-upload me-2"></i>Upload an image to analyze for leaks</p>
-                                <p><i class="fas fa-clock me-2"></i>Results appear instantly</p>
-                                <p><i class="fas fa-trash me-2"></i>Images auto-deleted after 30s</p>
+                                <p class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-upload me-2 text-primary"></i>
+                                    Upload an image to analyze for leaks
+                                </p>
+                                <p class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-clock me-2 text-success"></i>
+                                    Results appear instantly
+                                </p>
+                                <p class="d-flex align-items-center mb-0">
+                                    <i class="fas fa-trash me-2 text-warning"></i>
+                                    Images auto-deleted after 30s
+                                </p>
                             </div>
                         </div>
                         
                         <div id="uploadDetectionResults" class="sidebar-card" style="display: none;">
-                            <h6><i class="fas fa-chart-bar"></i> Analysis Results</h6>
+                            <h6><i class="fas fa-chart-bar text-success"></i> Analysis Results</h6>
                             <div id="uploadDetectionStats"></div>
                         </div>
                         
@@ -612,20 +942,22 @@
     <div class="modal fade permission-modal" id="permissionModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-camera"></i> Camera Permission Required
+                <div class="modal-header border-0">
+                    <h5 class="modal-title d-flex align-items-center gap-2">
+                        <i class="fas fa-camera text-primary"></i> 
+                        Camera Permission Required
                     </h5>
                 </div>
                 <div class="modal-body text-center">
                     <i class="fas fa-video fa-3x text-primary mb-3"></i>
-                    <p>This application needs access to your camera to detect leaks in real-time.</p>
+                    <p class="mb-3">This application needs access to your camera to detect leaks in real-time.</p>
                     <p class="text-muted">Your privacy is important - video is processed locally and not stored.</p>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer border-0">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="grantPermissionBtn">
-                        <i class="fas fa-check"></i> Grant Access
+                    <button type="button" class="btn btn-primary d-flex align-items-center gap-2" id="grantPermissionBtn">
+                        <i class="fas fa-check"></i> 
+                        <span>Grant Access</span>
                     </button>
                 </div>
             </div>
@@ -636,20 +968,21 @@
     <div class="modal fade" id="queueModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-users"></i> Live Detection Queue
+                <div class="modal-header border-0">
+                    <h5 class="modal-title d-flex align-items-center gap-2">
+                        <i class="fas fa-users text-warning"></i> 
+                        Live Detection Queue
                     </h5>
                 </div>
                 <div class="modal-body text-center">
                     <i class="fas fa-clock fa-3x text-warning mb-3"></i>
-                    <p>The live detection system is currently at capacity.</p>
+                    <p class="mb-3">The live detection system is currently at capacity.</p>
                     <div class="queue-indicator waiting">
                         <span id="modalQueueText">You are #1 in the queue</span>
                     </div>
                     <p class="text-muted mt-3">You will be automatically granted access when a spot becomes available.</p>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer border-0">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="leaveQueueBtn">Leave Queue</button>
                 </div>
             </div>
@@ -773,9 +1106,15 @@
                 document.getElementById('grantPermissionBtn').addEventListener('click', () => this.requestCameraAccess());
                 document.getElementById('leaveQueueBtn').addEventListener('click', () => this.leaveQueue());
                 
-                // Tab switching
-                document.getElementById('live-tab').addEventListener('click', () => this.switchMode('live'));
-                document.getElementById('upload-tab').addEventListener('click', () => this.switchMode('upload'));
+                // Tab switching with enhanced cleanup
+                document.getElementById('live-tab').addEventListener('click', () => {
+                    console.log('Switching to Live Detection mode');
+                    this.switchMode('live');
+                });
+                document.getElementById('upload-tab').addEventListener('click', () => {
+                    console.log('Switching to Image Upload mode');
+                    this.switchMode('upload');
+                });
                 
                 // Initialize modals
                 this.queueModal = new bootstrap.Modal(document.getElementById('queueModal'), {
@@ -786,8 +1125,33 @@
             
             switchMode(mode) {
                 this.currentMode = mode;
+                
+                // Show status message about mode switch
                 if (mode === 'live') {
+                    this.showAlert('info', 'Switched to Live Detection mode. Camera access may be required.', true);
+                } else if (mode === 'upload') {
+                    this.showAlert('info', 'Switched to Image Upload mode. Ready to analyze static images.', true);
+                }
+                
+                // Always stop detection when switching modes to prevent conflicts
+                if (this.isDetecting) {
                     this.stopDetection();
+                }
+                
+                // Update UI based on mode
+                if (mode === 'live') {
+                    // Clear any upload results when switching to live mode
+                    const uploadResultContainer = document.getElementById('uploadResultContainer');
+                    const uploadDetectionResults = document.getElementById('uploadDetectionResults');
+                    if (uploadResultContainer) uploadResultContainer.style.display = 'none';
+                    if (uploadDetectionResults) uploadDetectionResults.style.display = 'none';
+                } else if (mode === 'upload') {
+                    // Ensure live detection is fully stopped
+                    this.stopDetection();
+                    
+                    // Reset any continuous leak indicators
+                    document.getElementById('continuousLeakStatus').style.display = 'none';
+                    document.getElementById('detectionOverlay').innerHTML = '';
                 }
             }
             
@@ -839,6 +1203,10 @@
                 
                 const formData = new FormData();
                 formData.append('file', file);
+                
+                // Clear previous upload detection log
+                uploadDetectionLog.length = 0;
+                updateDetectionLogDisplay('upload');
                 
                 const progressContainer = document.getElementById('uploadProgress');
                 const progressBar = progressContainer.querySelector('.progress-bar');
@@ -1115,6 +1483,10 @@
                 document.getElementById('startBtn').style.display = 'none';
                 document.getElementById('stopBtn').style.display = 'inline-block';
                 
+                // Clear previous live detection log
+                liveDetectionLog.length = 0;
+                updateDetectionLogDisplay('live');
+                
                 const statusIndicator = document.getElementById('connectionStatus');
                 statusIndicator.className = 'status-indicator status-processing';
                 
@@ -1125,22 +1497,44 @@
             }
             
             stopDetection() {
+                if (!this.isDetecting) return; // Already stopped
+                
+                console.log('Stopping leak detection...');
                 this.isDetecting = false;
                 this.frameCount = 0;
                 this.continuousLeakFrames = 0;
+                
+                // Update UI elements
                 document.getElementById('startBtn').style.display = 'inline-block';
                 document.getElementById('stopBtn').style.display = 'none';
                 
+                // Clear detection overlays
                 document.getElementById('detectionOverlay').innerHTML = '';
                 document.getElementById('continuousLeakStatus').style.display = 'none';
                 
+                // Reset connection status indicator
                 const statusIndicator = document.getElementById('connectionStatus');
-                statusIndicator.className = 'status-indicator status-connected';
+                if (statusIndicator.classList.contains('status-processing')) {
+                    statusIndicator.className = 'status-indicator status-connected';
+                }
                 
                 // Notify server to stop live detection
-                this.socket.emit('stop_live_detection');
+                if (this.socket && this.socket.connected) {
+                    this.socket.emit('stop_live_detection');
+                }
                 
-                this.showAlert('warning', 'Leak detection stopped.');
+                // Stop camera stream if active
+                if (this.videoElement.srcObject) {
+                    const stream = this.videoElement.srcObject;
+                    const tracks = stream.getTracks();
+                    tracks.forEach(track => {
+                        track.stop();
+                        console.log('Camera track stopped:', track.kind);
+                    });
+                    this.videoElement.srcObject = null;
+                }
+                
+                this.showAlert('warning', 'Leak detection stopped and camera released.');
             }
             
             processFrames() {
