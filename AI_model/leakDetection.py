@@ -113,7 +113,7 @@ def main():
                 results = compiled_model([inputData])[compiled_model.output(0)]
                 
                 bestDetection = None
-                bestConfidence = 0.5
+                bestConfidence = 0.2
                 
                 for result in results[0]: 
                     if result[4] > bestConfidence: #find the latest best detection

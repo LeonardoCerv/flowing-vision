@@ -20,6 +20,9 @@ from werkzeug.utils import secure_filename
 
 load_dotenv()
 
+# Configuration
+CONFIDENCE_THRESHOLD = 0.1  # Adjustable confidence threshold for leak detection
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -112,11 +115,19 @@ def process_frame(frame_data, session_id):
         results = compiled_model([input_data])[compiled_model.output(0)]
         
         detections = []
-        best_confidence = 0.5
+        
+        # Analyze confidence distribution for debugging
+        confidences = [result[4] for result in results[0]]
+        max_confidence = max(confidences) if confidences else 0
+        print(f"Max confidence in real-time frame: {max_confidence:.4f}")
+        
+        # Use configurable confidence threshold
+        best_confidence = CONFIDENCE_THRESHOLD
         
         for result in results[0]:
-            if result[4] > best_confidence:
-                confidence = float(result[4])
+            confidence = float(result[4])
+            if confidence > best_confidence:
+                print(f"Real-time detection found with confidence: {confidence:.4f}")
                 x1, y1, x2, y2 = map(int, result[:4])
                 
                 # Scale coordinates back to original frame size
@@ -218,11 +229,19 @@ def process_static_image(image_path):
         results = compiled_model([input_data])[compiled_model.output(0)]
         
         detections = []
-        best_confidence = 0.5
+        
+        # Analyze confidence distribution for debugging
+        confidences = [result[4] for result in results[0]]
+        max_confidence = max(confidences) if confidences else 0
+        print(f"Max confidence in static image: {max_confidence:.4f}")
+        
+        # Use configurable confidence threshold
+        best_confidence = CONFIDENCE_THRESHOLD
         
         for result in results[0]:
-            if result[4] > best_confidence:
-                confidence = float(result[4])
+            confidence = float(result[4])
+            if confidence > best_confidence:
+                print(f"Static image detection found with confidence: {confidence:.4f}")
                 x1, y1, x2, y2 = map(int, result[:4])
                 
                 # Scale coordinates back to original frame size
