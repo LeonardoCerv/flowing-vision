@@ -38,8 +38,10 @@ compiled_model = None
 client = None
 collection = None
 
-# Session tracking
+# Session tracking and queue management
 active_sessions = {}
+live_detection_queue = []
+MAX_LIVE_USERS = 5
 
 def setup_mongodb():
     """Setup MongoDB connection"""
@@ -293,7 +295,7 @@ def process_static_image(image_path):
 
 @app.route('/')
 def index():
-    """Main page"""
+    """Main page with both live detection and upload functionality"""
     return render_template('index.html')
 
 @app.route('/health')
@@ -302,15 +304,14 @@ def health():
     return jsonify({
         'status': 'healthy',
         'model_loaded': compiled_model is not None,
-        'database_connected': collection is not None
+        'database_connected': collection is not None,
+        'active_live_users': len([s for s in active_sessions.values() if s.get('live_detection_active', False)]),
+        'max_live_users': MAX_LIVE_USERS
     })
 
-@app.route('/upload', methods=['GET', 'POST'])
+@app.route('/upload', methods=['POST'])
 def upload_image():
     """Handle image upload and processing"""
-    if request.method == 'GET':
-        return render_template('upload.html')
-    
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'})
     
@@ -335,6 +336,9 @@ def upload_image():
             result = process_static_image(filepath)
             
             if result is None:
+                # Clean up uploaded file on error
+                if os.path.exists(filepath):
+                    os.remove(filepath)
                 return jsonify({'error': 'Failed to process image'})
             
             # Save to database if connected
@@ -355,6 +359,25 @@ def upload_image():
                 except Exception as e:
                     print(f"Error saving static image leak to database: {str(e)}")
             
+            # Schedule file cleanup after response is sent
+            def cleanup_files():
+                try:
+                    # Delete original uploaded file
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
+                        print(f"Deleted original file: {filepath}")
+                    
+                    # Delete annotated file
+                    annotated_path = os.path.join(app.config['UPLOAD_FOLDER'], result['annotated_image'])
+                    if os.path.exists(annotated_path):
+                        os.remove(annotated_path)
+                        print(f"Deleted annotated file: {annotated_path}")
+                except Exception as e:
+                    print(f"Error cleaning up files: {str(e)}")
+            
+            # Schedule cleanup after 30 seconds to allow the client to download/view
+            threading.Timer(30.0, cleanup_files).start()
+            
             return jsonify({
                 'success': True,
                 'result': result
@@ -362,6 +385,9 @@ def upload_image():
             
         except Exception as e:
             print(f"Error handling file upload: {str(e)}")
+            # Clean up uploaded file on error
+            if 'filepath' in locals() and os.path.exists(filepath):
+                os.remove(filepath)
             return jsonify({'error': 'Failed to process uploaded file'})
     
     return jsonify({'error': 'File type not allowed'})
@@ -379,10 +405,71 @@ def handle_connect():
         'start_time': time.time(),
         'leak_frames': 0,
         'leak_detections': [],
-        'confirmed_leaks': []
+        'confirmed_leaks': [],
+        'live_detection_active': False,
+        'in_queue': False
     }
     emit('connected', {'session_id': session_id})
     print(f"Client connected: {session_id}")
+
+@socketio.on('request_live_detection')
+def handle_request_live_detection():
+    """Handle request to start live detection"""
+    session_id = request.sid
+    
+    if session_id not in active_sessions:
+        emit('live_detection_response', {'allowed': False, 'reason': 'Session not found'})
+        return
+    
+    # Count current active live detection users
+    active_live_users = len([s for s in active_sessions.values() if s.get('live_detection_active', False)])
+    
+    if active_live_users >= MAX_LIVE_USERS:
+        # Add to queue
+        if session_id not in live_detection_queue:
+            live_detection_queue.append(session_id)
+            active_sessions[session_id]['in_queue'] = True
+        
+        queue_position = live_detection_queue.index(session_id) + 1
+        emit('live_detection_response', {
+            'allowed': False, 
+            'reason': 'queue_full',
+            'queue_position': queue_position,
+            'active_users': active_live_users,
+            'max_users': MAX_LIVE_USERS
+        })
+        return
+    
+    # Allow live detection
+    active_sessions[session_id]['live_detection_active'] = True
+    if session_id in live_detection_queue:
+        live_detection_queue.remove(session_id)
+        active_sessions[session_id]['in_queue'] = False
+    
+    emit('live_detection_response', {
+        'allowed': True,
+        'active_users': active_live_users + 1,
+        'max_users': MAX_LIVE_USERS
+    })
+
+@socketio.on('stop_live_detection')
+def handle_stop_live_detection():
+    """Handle request to stop live detection"""
+    session_id = request.sid
+    
+    if session_id in active_sessions:
+        active_sessions[session_id]['live_detection_active'] = False
+        
+        # Process queue - allow next person in line
+        if live_detection_queue:
+            next_session_id = live_detection_queue.pop(0)
+            if next_session_id in active_sessions:
+                active_sessions[next_session_id]['live_detection_active'] = True
+                active_sessions[next_session_id]['in_queue'] = False
+                socketio.emit('live_detection_available', {
+                    'allowed': True,
+                    'message': 'You can now start live detection!'
+                }, room=next_session_id)
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -392,6 +479,23 @@ def handle_disconnect():
         session = active_sessions[session_id]
         session_duration = time.time() - session['start_time']
         print(f"Client disconnected: {session_id}, Duration: {session_duration:.2f}s, Confirmed leaks: {len(session['confirmed_leaks'])}")
+        
+        # Remove from queue if present
+        if session_id in live_detection_queue:
+            live_detection_queue.remove(session_id)
+        
+        # If this user was doing live detection, process queue
+        if session.get('live_detection_active', False):
+            if live_detection_queue:
+                next_session_id = live_detection_queue.pop(0)
+                if next_session_id in active_sessions:
+                    active_sessions[next_session_id]['live_detection_active'] = True
+                    active_sessions[next_session_id]['in_queue'] = False
+                    socketio.emit('live_detection_available', {
+                        'allowed': True,
+                        'message': 'You can now start live detection!'
+                    }, room=next_session_id)
+        
         del active_sessions[session_id]
 
 @socketio.on('process_frame')
@@ -402,6 +506,11 @@ def handle_frame(data):
     
     if not frame_data:
         emit('error', {'message': 'No frame data received'})
+        return
+    
+    # Check if user is allowed to do live detection
+    if session_id not in active_sessions or not active_sessions[session_id].get('live_detection_active', False):
+        emit('error', {'message': 'Live detection not authorized'})
         return
     
     result = process_frame(frame_data, session_id)
@@ -425,6 +534,27 @@ def handle_get_stats():
         }
         emit('session_stats', stats)
 
+@socketio.on('get_queue_status')
+def handle_get_queue_status():
+    """Get current queue status"""
+    session_id = request.sid
+    active_live_users = len([s for s in active_sessions.values() if s.get('live_detection_active', False)])
+    
+    if session_id in active_sessions:
+        session = active_sessions[session_id]
+        queue_position = None
+        if session.get('in_queue', False) and session_id in live_detection_queue:
+            queue_position = live_detection_queue.index(session_id) + 1
+        
+        emit('queue_status', {
+            'active_users': active_live_users,
+            'max_users': MAX_LIVE_USERS,
+            'queue_length': len(live_detection_queue),
+            'queue_position': queue_position,
+            'live_detection_active': session.get('live_detection_active', False),
+            'in_queue': session.get('in_queue', False)
+        })
+
 if __name__ == '__main__':
     print("Starting leak detection web application...")
     
@@ -435,5 +565,5 @@ if __name__ == '__main__':
     if compiled_model is None:
         print("Warning: Could not load OpenVINO model. Detection will not work.")
     
-    print("Starting Flask-SocketIO server on http://localhost:5001")
-    socketio.run(app, host='0.0.0.0', port=5001, debug=True)
+    print("Starting Flask-SocketIO server on http://localhost:5002")
+    socketio.run(app, host='0.0.0.0', port=5002, debug=True)
