@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flowing Vision - Leak Detection</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f8f9fa;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            padding: 2rem 0;
+        }
+        
+        .card {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .video-container {
+            position: relative;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            max-width: 100%;
+        }
+        
+        #videoElement {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .detection-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .detection-box {
+            position: absolute;
+            border: 3px solid #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+        
+        .detection-label {
+            position: absolute;
+            top: -25px;
+            left: 0;
+            background: #ff0000;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-connected {
+            background-color: #28a745;
+            box-shadow: 0 0 5px #28a745;
+        }
+        
+        .status-disconnected {
+            background-color: #dc3545;
+            box-shadow: 0 0 5px #dc3545;
+        }
+        
+        .status-processing {
+            background-color: #ffc107;
+            box-shadow: 0 0 5px #ffc107;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .stats-card {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .alert {
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .header-title {
+            color: #343a40;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .permission-modal {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+        
+        .leak-frames-indicator {
+            background: linear-gradient(90deg, #ff6b35, #f7931e);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        
+        .session-time {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .navbar-nav .nav-link {
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        .navbar-nav .nav-link:hover {
+            color: #007bff;
+        }
+        
+        .navbar-nav .nav-link.active {
+            color: #007bff;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-tint text-primary"></i> Flowing Vision
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link active" href="/">
+                    <i class="fas fa-video"></i> Live Detection
+                </a>
+                <a class="nav-link" href="/upload">
+                    <i class="fas fa-upload"></i> Image Upload
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container main-container">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="header-title">
+                    <i class="fas fa-tint"></i> Flowing Vision
+                    <br><small class="fs-5">Real-Time Leak Detection System</small>
+                </h1>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- Video Feed Column -->
+            <div class="col-lg-8 mb-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-video"></i> Live Camera Feed
+                        </h5>
+                        <div class="d-flex align-items-center">
+                            <span class="status-indicator" id="connectionStatus"></span>
+                            <span id="connectionText">Disconnected</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="video-container" id="videoContainer">
+                            <video id="videoElement" autoplay muted playsinline></video>
+                            <div class="detection-overlay" id="detectionOverlay"></div>
+                            <canvas id="hiddenCanvas" style="display: none;"></canvas>
+                        </div>
+                        
+                        <div class="d-flex justify-content-center gap-3 mt-3">
+                            <button id="startBtn" class="btn btn-primary">
+                                <i class="fas fa-play"></i> Start Detection
+                            </button>
+                            <button id="stopBtn" class="btn btn-danger" style="display: none;">
+                                <i class="fas fa-stop"></i> Stop Detection
+                            </button>
+                        </div>
+                        
+                        <div id="leakFramesIndicator" class="text-center mt-2" style="display: none;">
+                            <div class="leak-frames-indicator">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Continuous leak detected: <span id="leakFramesCount">0</span> frames
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+            
+            <!-- Statistics Column -->
+            <div class="col-lg-4">
+                <!-- Connection Status -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> System Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <strong>Model Status:</strong>
+                            <span class="badge bg-secondary" id="modelStatus">Loading...</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Database:</strong>
+                            <span class="badge bg-secondary" id="dbStatus">Loading...</span>
+                        </div>
+                        <div>
+                            <strong>Session Time:</strong>
+                            <div class="session-time" id="sessionTime">00:00:00</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Statistics -->
+                <div class="stats-card">
+                    <div class="text-center">
+                        <div class="stats-number" id="currentFrames">0</div>
+                        <div><i class="fas fa-film"></i> Current Leak Frames</div>
+                    </div>
+                </div>
+                
+                <div class="stats-card">
+                    <div class="text-center">
+                        <div class="stats-number" id="confirmedLeaks">0</div>
+                        <div><i class="fas fa-check-circle"></i> Confirmed Leaks</div>
+                    </div>
+                </div>
+                
+                <!-- Alerts -->
+                <div id="alertContainer" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Permission Modal -->
+    <div class="modal fade permission-modal" id="permissionModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-camera"></i> Camera Permission Required
+                    </h5>
+                </div>
+                <div class="modal-body text-center">
+                    <i class="fas fa-video fa-3x text-primary mb-3"></i>
+                    <p>This application needs access to your camera to detect leaks in real-time.</p>
+                    <p class="text-muted">Your privacy is important - video is processed locally and not stored.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="grantPermissionBtn">
+                        <i class="fas fa-check"></i> Grant Access
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        class LeakDetectionApp {
+            constructor() {
+                this.socket = null;
+                this.videoElement = document.getElementById('videoElement');
+                this.canvas = document.getElementById('hiddenCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.isDetecting = false;
+                this.sessionStartTime = null;
+                this.sessionTimer = null;
+                
+                this.initializeElements();
+                this.initializeSocketIO();
+                this.checkSystemHealth();
+            }
+            
+            initializeElements() {
+                document.getElementById('startBtn').addEventListener('click', () => this.startDetection());
+                document.getElementById('stopBtn').addEventListener('click', () => this.stopDetection());
+                document.getElementById('grantPermissionBtn').addEventListener('click', () => this.requestCameraAccess());
+            }
+            
+            initializeSocketIO() {
+                this.socket = io();
+                
+                this.socket.on('connect', () => {
+                    this.updateConnectionStatus(true);
+                    this.sessionStartTime = Date.now();
+                    this.startSessionTimer();
+                });
+                
+                this.socket.on('disconnect', () => {
+                    this.updateConnectionStatus(false);
+                    this.stopSessionTimer();
+                });
+                
+                this.socket.on('detection_result', (data) => {
+                    this.handleDetectionResult(data);
+                });
+                
+                this.socket.on('error', (data) => {
+                    this.showAlert('danger', data.message);
+                });
+                
+                this.socket.on('session_stats', (data) => {
+                    this.updateStats(data);
+                });
+            }
+            
+            async checkSystemHealth() {
+                try {
+                    const response = await fetch('/health');
+                    const data = await response.json();
+                    
+                    document.getElementById('modelStatus').textContent = data.model_loaded ? 'Ready' : 'Error';
+                    document.getElementById('modelStatus').className = `badge ${data.model_loaded ? 'bg-success' : 'bg-danger'}`;
+                    
+                    document.getElementById('dbStatus').textContent = data.database_connected ? 'Connected' : 'Disconnected';
+                    document.getElementById('dbStatus').className = `badge ${data.database_connected ? 'bg-success' : 'bg-warning'}`;
+                    
+                } catch (error) {
+                    console.error('Health check failed:', error);
+                }
+            }
+            
+            updateConnectionStatus(connected) {
+                const statusIndicator = document.getElementById('connectionStatus');
+                const statusText = document.getElementById('connectionText');
+                
+                if (connected) {
+                    statusIndicator.className = 'status-indicator status-connected';
+                    statusText.textContent = 'Connected';
+                } else {
+                    statusIndicator.className = 'status-indicator status-disconnected';
+                    statusText.textContent = 'Disconnected';
+                }
+            }
+            
+            startSessionTimer() {
+                this.sessionTimer = setInterval(() => {
+                    if (this.sessionStartTime) {
+                        const elapsed = Date.now() - this.sessionStartTime;
+                        const hours = Math.floor(elapsed / 3600000);
+                        const minutes = Math.floor((elapsed % 3600000) / 60000);
+                        const seconds = Math.floor((elapsed % 60000) / 1000);
+                        
+                        document.getElementById('sessionTime').textContent = 
+                            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    }
+                }, 1000);
+            }
+            
+            stopSessionTimer() {
+                if (this.sessionTimer) {
+                    clearInterval(this.sessionTimer);
+                    this.sessionTimer = null;
+                }
+            }
+            
+            async requestCameraAccess() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            width: 640, 
+                            height: 480,
+                            facingMode: 'environment' // Prefer back camera
+                        } 
+                    });
+                    
+                    this.videoElement.srcObject = stream;
+                    
+                    // Hide permission modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('permissionModal'));
+                    if (modal) modal.hide();
+                    
+                    this.showAlert('success', 'Camera access granted successfully!');
+                    
+                } catch (error) {
+                    console.error('Camera access denied:', error);
+                    this.showAlert('danger', 'Camera access denied. Please enable camera permissions and try again.');
+                }
+            }
+            
+            async startDetection() {
+                if (!this.videoElement.srcObject) {
+                    // Show permission modal
+                    const modal = new bootstrap.Modal(document.getElementById('permissionModal'));
+                    modal.show();
+                    return;
+                }
+                
+                this.isDetecting = true;
+                document.getElementById('startBtn').style.display = 'none';
+                document.getElementById('stopBtn').style.display = 'inline-block';
+                
+                const statusIndicator = document.getElementById('connectionStatus');
+                statusIndicator.className = 'status-indicator status-processing';
+                
+                this.showAlert('info', 'Leak detection started. Monitoring for potential leaks...');
+                
+                // Start frame processing
+                this.processFrames();
+            }
+            
+            stopDetection() {
+                this.isDetecting = false;
+                document.getElementById('startBtn').style.display = 'inline-block';
+                document.getElementById('stopBtn').style.display = 'none';
+                
+                document.getElementById('leakFramesIndicator').style.display = 'none';
+                document.getElementById('detectionOverlay').innerHTML = '';
+                
+                const statusIndicator = document.getElementById('connectionStatus');
+                statusIndicator.className = 'status-indicator status-connected';
+                
+                this.showAlert('warning', 'Leak detection stopped.');
+            }
+            
+            processFrames() {
+                if (!this.isDetecting) return;
+                
+                // Set canvas size to match video
+                this.canvas.width = this.videoElement.videoWidth || 640;
+                this.canvas.height = this.videoElement.videoHeight || 480;
+                
+                // Draw video frame to canvas
+                this.ctx.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
+                
+                // Convert to base64
+                const frameData = this.canvas.toDataURL('image/jpeg', 0.8);
+                
+                // Send frame to server
+                if (this.socket && this.socket.connected) {
+                    this.socket.emit('process_frame', { frame: frameData });
+                }
+                
+                // Continue processing
+                setTimeout(() => this.processFrames(), 100); // 10 FPS
+            }
+            
+            handleDetectionResult(data) {
+                const overlay = document.getElementById('detectionOverlay');
+                overlay.innerHTML = '';
+                
+                if (data.detections && data.detections.length > 0) {
+                    // Draw detection boxes
+                    data.detections.forEach(detection => {
+                        this.drawDetectionBox(detection);
+                    });
+                }
+                
+                // Update statistics
+                if (data.session_stats) {
+                    document.getElementById('confirmedLeaks').textContent = data.session_stats.confirmed_leaks;
+                    document.getElementById('currentFrames').textContent = data.session_stats.leak_frames;
+                    
+                    // Show leak frames indicator
+                    const leakFramesIndicator = document.getElementById('leakFramesIndicator');
+                    const leakFramesCount = document.getElementById('leakFramesCount');
+                    
+                    if (data.session_stats.leak_frames > 0) {
+                        leakFramesIndicator.style.display = 'block';
+                        leakFramesCount.textContent = data.session_stats.leak_frames;
+                    } else {
+                        leakFramesIndicator.style.display = 'none';
+                    }
+                }
+            }
+            
+            drawDetectionBox(detection) {
+                const overlay = document.getElementById('detectionOverlay');
+                const videoRect = this.videoElement.getBoundingClientRect();
+                const containerRect = overlay.getBoundingClientRect();
+                
+                const scaleX = containerRect.width / this.canvas.width;
+                const scaleY = containerRect.height / this.canvas.height;
+                
+                const [x1, y1, x2, y2] = detection.bbox;
+                
+                const box = document.createElement('div');
+                box.className = 'detection-box';
+                box.style.left = `${x1 * scaleX}px`;
+                box.style.top = `${y1 * scaleY}px`;
+                box.style.width = `${(x2 - x1) * scaleX}px`;
+                box.style.height = `${(y2 - y1) * scaleY}px`;
+                
+                const label = document.createElement('div');
+                label.className = 'detection-label';
+                label.textContent = `Leak: ${(detection.confidence * 100).toFixed(1)}%`;
+                box.appendChild(label);
+                
+                overlay.appendChild(box);
+            }
+            
+            showAlert(type, message, autoHide = true) {
+                const alertContainer = document.getElementById('alertContainer');
+                
+                const alert = document.createElement('div');
+                alert.className = `alert alert-${type} alert-dismissible fade show`;
+                alert.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                alertContainer.appendChild(alert);
+                
+                if (autoHide) {
+                    setTimeout(() => {
+                        if (alert.parentNode) {
+                            alert.remove();
+                        }
+                    }, 5000);
+                }
+            }
+        }
+        
+        // Initialize app when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new LeakDetectionApp();
+        });
+    </script>
+</body>
+</html>

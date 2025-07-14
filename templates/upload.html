@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flowing Vision - Image Upload</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f8f9fa;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            padding: 2rem 0;
+        }
+        
+        .card {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-title {
+            color: #343a40;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .upload-area {
+            border: 2px dashed #007bff;
+            border-radius: 10px;
+            padding: 3rem 2rem;
+            text-align: center;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #0056b3;
+            background: #e3f2fd;
+        }
+        
+        .upload-area.dragover {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: #007bff;
+            margin-bottom: 1rem;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .detection-result {
+            margin-top: 2rem;
+        }
+        
+        .detection-box {
+            position: absolute;
+            border: 3px solid #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+        
+        .detection-label {
+            position: absolute;
+            top: -25px;
+            left: 0;
+            background: #ff0000;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .result-container {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .navbar-nav .nav-link {
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        .navbar-nav .nav-link:hover {
+            color: #007bff;
+        }
+        
+        .navbar-nav .nav-link.active {
+            color: #007bff;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-tint text-primary"></i> Flowing Vision
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">
+                    <i class="fas fa-video"></i> Live Detection
+                </a>
+                <a class="nav-link active" href="/upload">
+                    <i class="fas fa-upload"></i> Image Upload
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container main-container">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="header-title">
+                    <i class="fas fa-images"></i> Image Leak Detection
+                    <br><small class="fs-5">Upload images to analyze for leaks</small>
+                </h1>
+            </div>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-upload"></i> Upload Image for Analysis
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="upload-area" id="uploadArea">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <h4>Drop your image here or click to browse</h4>
+                            <p class="text-muted">Supported formats: PNG, JPG, JPEG, GIF, BMP, TIFF</p>
+                            <p class="text-muted">Maximum file size: 16MB</p>
+                            <input type="file" id="fileInput" class="d-none" accept="image/*">
+                        </div>
+                        
+                        <div id="uploadProgress" class="mt-3" style="display: none;">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <p class="text-center mt-2">Processing image...</p>
+                        </div>
+                        
+                        <div id="resultContainer" class="detection-result" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Original Image</h6>
+                                    <div class="text-center">
+                                        <img id="originalImage" class="image-preview" alt="Original">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Detection Result</h6>
+                                    <div class="text-center">
+                                        <div class="result-container">
+                                            <img id="annotatedImage" class="image-preview" alt="Annotated">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6><i class="fas fa-chart-bar"></i> Analysis Results</h6>
+                                            <div id="detectionStats"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="errorContainer" class="mt-3" style="display: none;">
+                            <div class="alert alert-danger" role="alert">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span id="errorMessage"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        class ImageUploadApp {
+            constructor() {
+                this.uploadArea = document.getElementById('uploadArea');
+                this.fileInput = document.getElementById('fileInput');
+                this.uploadProgress = document.getElementById('uploadProgress');
+                this.resultContainer = document.getElementById('resultContainer');
+                this.errorContainer = document.getElementById('errorContainer');
+                
+                this.initializeElements();
+            }
+            
+            initializeElements() {
+                // Click to browse
+                this.uploadArea.addEventListener('click', () => {
+                    this.fileInput.click();
+                });
+                
+                // File input change
+                this.fileInput.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        this.uploadFile(e.target.files[0]);
+                    }
+                });
+                
+                // Drag and drop
+                this.uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.add('dragover');
+                });
+                
+                this.uploadArea.addEventListener('dragleave', () => {
+                    this.uploadArea.classList.remove('dragover');
+                });
+                
+                this.uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('dragover');
+                    
+                    if (e.dataTransfer.files.length > 0) {
+                        this.uploadFile(e.dataTransfer.files[0]);
+                    }
+                });
+            }
+            
+            async uploadFile(file) {
+                // Validate file type
+                const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/bmp', 'image/tiff'];
+                if (!allowedTypes.includes(file.type)) {
+                    this.showError('Please select a valid image file (PNG, JPG, JPEG, GIF, BMP, TIFF)');
+                    return;
+                }
+                
+                // Validate file size (16MB)
+                if (file.size > 16 * 1024 * 1024) {
+                    this.showError('File size must be less than 16MB');
+                    return;
+                }
+                
+                // Hide previous results/errors
+                this.hideAll();
+                
+                // Show progress
+                this.uploadProgress.style.display = 'block';
+                this.updateProgress(0);
+                
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    this.updateProgress(30);
+                    
+                    const response = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    this.updateProgress(70);
+                    
+                    const result = await response.json();
+                    
+                    this.updateProgress(100);
+                    
+                    if (result.success) {
+                        this.showResult(result.result);
+                    } else {
+                        this.showError(result.error || 'Failed to process image');
+                    }
+                    
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    this.showError('Network error occurred while uploading');
+                } finally {
+                    // Hide progress after a delay
+                    setTimeout(() => {
+                        this.uploadProgress.style.display = 'none';
+                    }, 500);
+                }
+            }
+            
+            updateProgress(percentage) {
+                const progressBar = this.uploadProgress.querySelector('.progress-bar');
+                progressBar.style.width = percentage + '%';
+            }
+            
+            showResult(result) {
+                // Set images
+                document.getElementById('originalImage').src = `/uploads/${result.original_image}`;
+                document.getElementById('annotatedImage').src = `/uploads/${result.annotated_image}`;
+                
+                // Generate stats
+                const statsContainer = document.getElementById('detectionStats');
+                let statsHtml = `
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h4 ${result.leak_detected ? 'text-danger' : 'text-success'}">
+                                    ${result.leak_detected ? result.detections.length : 0}
+                                </div>
+                                <small class="text-muted">Leaks Detected</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h4 text-info">${result.image_dimensions.width}x${result.image_dimensions.height}</div>
+                                <small class="text-muted">Image Size</small>
+                            </div>
+                        </div>
+                `;
+                
+                if (result.leak_detected) {
+                    const maxConfidence = Math.max(...result.detections.map(d => d.confidence));
+                    statsHtml += `
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h4 text-warning">${(maxConfidence * 100).toFixed(1)}%</div>
+                                <small class="text-muted">Max Confidence</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h4 text-danger">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <small class="text-muted">Leak Alert</small>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    statsHtml += `
+                        <div class="col-md-6">
+                            <div class="text-center">
+                                <div class="h4 text-success">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <small class="text-muted">No Leaks Detected</small>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                statsHtml += '</div>';
+                
+                if (result.leak_detected) {
+                    statsHtml += '<hr><h6>Detection Details:</h6><ul class="list-unstyled">';
+                    result.detections.forEach((detection, index) => {
+                        statsHtml += `
+                            <li class="mb-2">
+                                <i class="fas fa-dot-circle text-danger"></i>
+                                <strong>Detection ${index + 1}:</strong> 
+                                Confidence: ${(detection.confidence * 100).toFixed(1)}%,
+                                Position: (${detection.bbox[0]}, ${detection.bbox[1]}) to (${detection.bbox[2]}, ${detection.bbox[3]})
+                            </li>
+                        `;
+                    });
+                    statsHtml += '</ul>';
+                }
+                
+                statsContainer.innerHTML = statsHtml;
+                this.resultContainer.style.display = 'block';
+            }
+            
+            showError(message) {
+                document.getElementById('errorMessage').textContent = message;
+                this.errorContainer.style.display = 'block';
+            }
+            
+            hideAll() {
+                this.resultContainer.style.display = 'none';
+                this.errorContainer.style.display = 'none';
+            }
+        }
+        
+        // Initialize app when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new ImageUploadApp();
+        });
+    </script>
+</body>
+</html>
