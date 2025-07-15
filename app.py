@@ -25,8 +25,7 @@ CONFIDENCE_THRESHOLD = float(os.getenv('CONFIDENCE_THRESHOLD', '0.1'))  # Adjust
 
 app = Flask(__name__)
 
-# Lock for serializing model inference
-model_infer_lock = threading.Lock()
+## Removed model_infer_lock (threading.Lock) for model inference
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
@@ -132,9 +131,8 @@ def process_frame(frame_data, session_id):
         frame_resized = cv2.resize(frame, (640, 640))
         input_data = np.expand_dims(frame_resized.transpose(2, 0, 1), axis=0).astype(np.float32) / 255.0
         
-        # Model inference (thread-safe)
-        with model_infer_lock:
-            results = compiled_model([input_data])[compiled_model.output(0)]
+        # Model inference (no thread lock)
+        results = compiled_model([input_data])[compiled_model.output(0)]
         
         detections = []
         
@@ -247,9 +245,8 @@ def process_static_image(image_path):
         frame_resized = cv2.resize(frame, (640, 640))
         input_data = np.expand_dims(frame_resized.transpose(2, 0, 1), axis=0).astype(np.float32) / 255.0
         
-        # Model inference (thread-safe)
-        with model_infer_lock:
-            results = compiled_model([input_data])[compiled_model.output(0)]
+        # Model inference (no thread lock)
+        results = compiled_model([input_data])[compiled_model.output(0)]
         
         detections = []
         

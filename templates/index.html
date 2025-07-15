@@ -733,7 +733,7 @@
         <div class="detection-mode-tabs d-flex justify-content-center">
             <ul class="nav nav-pills" id="detectionTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="live-tab" data-bs-toggle="pill" data-bs-target="#live-detection" type="button" role="tab" 
+                    <button class="nav-link" id="live-tab" data-bs-toggle="pill" data-bs-target="#live-detection" type="button" role="tab" 
                             title="Real-time leak detection using your camera">
                         <i class="fas fa-video me-2"></i> 
                         <span>Live Detection</span>
@@ -741,7 +741,7 @@
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="upload-tab" data-bs-toggle="pill" data-bs-target="#image-upload" type="button" role="tab"
+                    <button class="nav-link active" id="upload-tab" data-bs-toggle="pill" data-bs-target="#image-upload" type="button" role="tab"
                             title="Upload and analyze static images for leaks">
                         <i class="fas fa-upload me-2"></i> 
                         <span>Image Upload</span>
@@ -753,7 +753,7 @@
         
         <div class="tab-content" id="detectionTabsContent">
             <!-- Live Detection Tab -->
-            <div class="tab-pane fade show active" id="live-detection" role="tabpanel">
+            <div class="tab-pane fade" id="live-detection" role="tabpanel">
                 <div class="row">
                     <!-- Video Feed Column -->
                     <div class="col-lg-8 mb-4">
@@ -819,6 +819,9 @@
                     <div class="col-lg-4">
                         <!-- Session Info -->
                         <div class="sidebar-card">
+                            <p class="d-flex align-items-center mb-4 text-danger">
+                                This live feed might not be available at the moment. or might be very slow due to cpu usage. Please try again later.
+                            </p>
                             <h6><i class="fas fa-clock text-primary"></i> Session Info</h6>
                             <div class="mb-3">
                                 <strong>Session Time:</strong>
@@ -854,7 +857,7 @@
             </div>
             
             <!-- Image Upload Tab -->
-            <div class="tab-pane fade" id="image-upload" role="tabpanel">
+            <div class="tab-pane fade show active" id="image-upload" role="tabpanel">
                 <div class="row">
                     <div class="col-lg-8 mb-4">
                         <div class="card">
