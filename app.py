@@ -21,17 +21,17 @@ import socket
 load_dotenv()
 
 # Configuration
-CONFIDENCE_THRESHOLD = 0.1  # Adjustable confidence threshold for leak detection
+CONFIDENCE_THRESHOLD = float(os.getenv('CONFIDENCE_THRESHOLD', '0.1'))  # Adjustable confidence threshold for leak detection
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key-here'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff'}
 
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+socketio = SocketIO(app, cors_allowed_origins=["https://flowingvision.leonardocerv.hackclub.app", "http://localhost:*"], async_mode='threading')
 
 # Global variables for model and database
 compiled_model = None
@@ -40,7 +40,7 @@ collection = None
 
 active_sessions = {}
 live_detection_queue = []
-MAX_LIVE_USERS = 5
+MAX_LIVE_USERS = int(os.getenv('MAX_LIVE_USERS', '5'))
 
 def is_port_available(port, host='0.0.0.0'):
     """Check if a port is available for binding"""
@@ -581,14 +581,15 @@ if __name__ == '__main__':
     if compiled_model is None:
         print("Warning: Could not load OpenVINO model. Detection will not work.")
     
-    # Get port from environment variable, default to 8943
+    # Get port from environment variable, default to 8946
     try:
-        port = int(os.getenv('PORT', '8943'))
+        port = int(os.getenv('PORT', '8946'))
     except ValueError:
-        print("Warning: Invalid PORT value in environment. Using default port 8943.")
-        port = 8943
+        print("Warning: Invalid PORT value in environment. Using default port 8946.")
+        port = 8946
     
-    host = '0.0.0.0'
+    # For production behind reverse proxy, bind to localhost only
+    host = '127.0.0.1'
     
     # Find an available port starting from the specified port
     available_port = find_available_port(port, max_attempts=10, host=host)
@@ -601,4 +602,8 @@ if __name__ == '__main__':
         print(f"Warning: Port {port} was not available. Using port {available_port} instead.")
     
     print(f"Starting Flask-SocketIO server on http://{host}:{available_port}")
-    socketio.run(app, host=host, port=available_port, debug=True)
+    
+    # Check if running in production (you can set FLASK_ENV=production)
+    debug_mode = os.getenv('FLASK_ENV', 'development') == 'development'
+    
+    socketio.run(app, host=host, port=available_port, debug=debug_mode, allow_unsafe_werkzeug=True)
