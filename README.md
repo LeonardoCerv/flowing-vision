@@ -1,20 +1,65 @@
+> 📖 🇪🇸 También disponible en español: [README.es.md](README.es.md)
+
 # Flowing Vision
 
-## project background
-Flowing Vision is a HackMTY (hackathon) project, the goal was addressing the water crisis in Monterrey. Me and my team built an AI leak detection model that uses computer vision to identify water leaks in industrial pipelines through security camera feeds. The model was made entirely from scratch, i even helped with the data classification and data labeling.
+![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-000000?logo=flask&logoColor=white)
+![OpenCV](https://img.shields.io/badge/OpenCV-5C3EE8?logo=opencv&logoColor=white)
+![OpenVINO](https://img.shields.io/badge/OpenVINO-0071C5?logo=intel&logoColor=white)
+![Field](https://img.shields.io/badge/Field-Computer%20Vision-white)
+![License](https://img.shields.io/badge/License-MIT-brown)
 
-## current status: massive refactor
-I'm currently re-making this project from the ground up myself. The key change is that I've decided to rebuild the application using Django instead of NextJS. I chose Django because ive used it before but just once so i wanna keep learning more about it (also all the winners of this hackathon used django for some reason).
+An AI-powered leak detection system that uses computer vision to identify water leaks in real-time through camera feeds or uploaded images. Originally developed during HackMTY to address Monterrey's water crisis, this project helps prevent water damage and costly repairs through advanced leak detection technology.
 
-## Goals
-1. Learning Django entirely through tutorials and forums
-2. Taking a break from AI
-3. Building everything myself to improve my understanding
-4. Documenting my learning process through hackclub along the way
+[![Live Demo](https://img.shields.io/badge/Check%20out%20the%20Live%20Demo%20here-blue?style=for-the-badge&logoColor=white)](https://flowingvision.leonardocerv.hackclub.app)
 
-## why choosing this project?
-This was one of the most fun projects to made and also one of my best hackathon expierences, i thnk this project can look really good in my resume and my goal is to get it up and running, my way, solo. This is also going to help me improve in django and who knows maybe some people will like the repo, i think its something not conventional
+## What it does
 
-This repository now serves as both a project and a personal manifesto for how I want to approach learning in this season.
+Detect water leaks before they become expensive problems:
 
-More updates coming as my coding progresses!
+- **Real-time detection** using your camera or webcam
+- **Image upload analysis** for instant leak detection
+- **AI-powered accuracy** using optimized computer vision models
+- **Local processing** - your data never leaves your device
+- **Web-based interface** - no installation required
+
+
+## Features
+
+### Live Detection
+Real-time video processing using your camera or webcam, with continuous monitoring and instant alerts. The system supports session tracking, statistics, and queue management for multiple users. Communication between the server and clients is handled via WebSockets for true real-time responsiveness.
+
+### Image Upload
+Analyze static images instantly for leak detection. The platform supports multiple image formats (PNG, JPG, JPEG, GIF, BMP, TIFF) and provides detailed detection results with confidence scores. Uploaded images are automatically cleaned up after 30 seconds to ensure privacy and efficient resource management.
+
+### AI Model
+The leak detection engine is powered by advanced computer vision models, optimized using Intel OpenVINO for fast inference. It supports multiple model formats (ONNX, PyTorch, OpenVINO) and delivers high accuracy with confidence scoring. The system is designed for efficient, real-time performance on consumer hardware.
+
+## About the Project
+
+Flowing Vision's future is to help factories and individuals proactively detect water leaks before they escalate into costly problems, using computer vision. By leveraging AI and computer vision, the platform can process both live video feeds and uploaded images, making it suitable for a wide range of use cases, from home monitoring to industrial applications. All processing is done locally, ensuring user privacy and data security. The project was originally developed during HackMTY to address Monterrey's water crisis, but its technology is applicable anywhere water conservation and damage prevention are priorities.
+
+## Quick Start
+
+### Prerequisites
+- Python 3.8+
+- Webcam (for live detection)
+- Modern web browser
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/flowing-vision.git
+cd flowing-vision
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run setup script (optional)
+chmod +x setup.sh
+./setup.sh
