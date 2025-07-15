@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 import threading
 from werkzeug.utils import secure_filename
+import socket
 
 load_dotenv()
 
@@ -37,10 +38,26 @@ compiled_model = None
 client = None
 collection = None
 
-# Session tracking and queue management
 active_sessions = {}
 live_detection_queue = []
 MAX_LIVE_USERS = 5
+
+def is_port_available(port, host='0.0.0.0'):
+    """Check if a port is available for binding"""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind((host, port))
+            return True
+    except socket.error:
+        return False
+
+def find_available_port(start_port, max_attempts=10, host='0.0.0.0'):
+    """Find an available port starting from start_port"""
+    for i in range(max_attempts):
+        port = start_port + i
+        if is_port_available(port, host):
+            return port
+    return None
 
 def setup_mongodb():
     """Setup MongoDB connection"""
@@ -564,5 +581,24 @@ if __name__ == '__main__':
     if compiled_model is None:
         print("Warning: Could not load OpenVINO model. Detection will not work.")
     
-    print("Starting Flask-SocketIO server on http://localhost:5002")
-    socketio.run(app, host='0.0.0.0', port=5002, debug=True)
+    # Get port from environment variable, default to 8943
+    try:
+        port = int(os.getenv('PORT', '8943'))
+    except ValueError:
+        print("Warning: Invalid PORT value in environment. Using default port 8943.")
+        port = 8943
+    
+    host = '0.0.0.0'
+    
+    # Find an available port starting from the specified port
+    available_port = find_available_port(port, max_attempts=10, host=host)
+    
+    if available_port is None:
+        print(f"Error: Could not find an available port starting from {port}")
+        exit(1)
+    
+    if available_port != port:
+        print(f"Warning: Port {port} was not available. Using port {available_port} instead.")
+    
+    print(f"Starting Flask-SocketIO server on http://{host}:{available_port}")
+    socketio.run(app, host=host, port=available_port, debug=True)
