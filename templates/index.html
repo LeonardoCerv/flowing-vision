@@ -721,7 +721,7 @@
                     </p>
                     <p class="text-danger" style="font-size: 14px;">
                         <i class="fas fa-info-circle text-danger me-2"></i>
-                        Note: This is a demo version, if the model is not working, it might be busy running on another user's request. please waiting for a moment before trying again.
+                        Note: This model was trained by me on a small dataset, so it may not work perfectly or have the best results. Try different images or videos to see the results.
                         <br>
                         if it still not working, contact me @ leocerva29@gmail.com
                     </p>
@@ -778,6 +778,10 @@
                                             <i class="fas fa-exclamation-triangle"></i>
                                             <span class="status-badge danger">Continuous Leak Detected</span>
                                         </div>
+                                        <div class="status-item" id="frameRateStatus" style="display: none;">
+                                            <i class="fas fa-tachometer-alt"></i>
+                                            <span id="frameRateText">0 FPS</span>
+                                        </div>
                                         <div class="status-item">
                                             <span class="status-badge" id="modelStatus">Loading...</span>
                                         </div>
@@ -820,7 +824,7 @@
                         <!-- Session Info -->
                         <div class="sidebar-card">
                             <p class="d-flex align-items-center mb-4 text-danger">
-                                This live feed might not be available at the moment. or might be very slow due to cpu usage. Please try again later.
+                                This is a demo version, if the model is not working, it might be busy running on another user's request. please waiting for a moment before trying again.
                             </p>
                             <h6><i class="fas fa-clock text-primary"></i> Session Info</h6>
                             <div class="mb-3">
@@ -1102,6 +1106,19 @@
                 this.frameCount = 0;
                 this.continuousLeakFrames = 0;
                 
+                // Frame processing state management
+                this.processingFrame = false;
+                this.frameStartTime = null;
+                this.frameInterval = 150; // Default 6.7 FPS for better performance on limited CPU
+                this.maxFrameInterval = 500; // Maximum 2 FPS
+                this.minFrameInterval = 100; // Minimum 10 FPS
+                this.consecutiveErrors = 0;
+                this.maxConsecutiveErrors = 3;
+                
+                // Frame rate tracking for display
+                this.recentFrameTimes = [];
+                this.lastFrameRateUpdate = 0;
+                
                 this.initializeElements();
                 this.initializeSocketIO();
                 this.checkSystemHealth();
@@ -1334,7 +1351,32 @@
                 });
                 
                 this.socket.on('error', (data) => {
-                    this.showAlert('danger', data.message);
+                    // Handle frame processing errors
+                    if (this.processingFrame) {
+                        this.processingFrame = false;
+                        this.consecutiveErrors++;
+                        
+                        // Increase frame interval on errors to reduce server load
+                        this.frameInterval = Math.min(this.frameInterval + 100, this.maxFrameInterval);
+                        
+                        // If too many consecutive errors, temporarily pause and show a gentle message
+                        if (this.consecutiveErrors >= this.maxConsecutiveErrors) {
+                            console.warn('Multiple frame processing errors, temporarily reducing frame rate');
+                            this.frameInterval = this.maxFrameInterval; // Reduce to minimum frame rate
+                            this.consecutiveErrors = 0; // Reset counter
+                        }
+                        
+                        // Schedule next frame even on error to continue detection
+                        if (this.isDetecting) {
+                            setTimeout(() => this.processFrames(), this.frameInterval);
+                        }
+                    }
+                    
+                    // Only show user-facing error for non-frame-processing errors or severe errors
+                    if (!data.message.includes('Failed to process frame') || this.consecutiveErrors >= this.maxConsecutiveErrors) {
+                        console.warn('Detection processing issue:', data.message);
+                        // Don't spam user with frame processing errors
+                    }
                 });
                 
                 this.socket.on('session_stats', (data) => {
@@ -1489,6 +1531,18 @@
             
             startLiveDetection() {
                 this.isDetecting = true;
+                
+                // Reset processing state
+                this.processingFrame = false;
+                this.frameStartTime = null;
+                this.consecutiveErrors = 0;
+                this.frameInterval = 150; // Reset to default
+                
+                // Reset frame rate tracking
+                this.recentFrameTimes = [];
+                this.lastFrameRateUpdate = 0;
+                document.getElementById('frameRateStatus').style.display = 'none';
+                
                 document.getElementById('startBtn').style.display = 'none';
                 document.getElementById('stopBtn').style.display = 'inline-block';
                 
@@ -1512,6 +1566,17 @@
                 this.isDetecting = false;
                 this.frameCount = 0;
                 this.continuousLeakFrames = 0;
+                
+                // Reset processing state
+                this.processingFrame = false;
+                this.frameStartTime = null;
+                this.consecutiveErrors = 0;
+                this.frameInterval = 150; // Reset to default
+                
+                // Reset frame rate display
+                this.recentFrameTimes = [];
+                this.lastFrameRateUpdate = 0;
+                document.getElementById('frameRateStatus').style.display = 'none';
                 
                 // Update UI elements
                 document.getElementById('startBtn').style.display = 'inline-block';
@@ -1549,6 +1614,12 @@
             processFrames() {
                 if (!this.isDetecting) return;
                 
+                // Don't send new frame if one is already being processed
+                if (this.processingFrame) {
+                    setTimeout(() => this.processFrames(), 50);
+                    return;
+                }
+                
                 this.frameCount++;
                 
                 // Set canvas size to match video
@@ -1563,14 +1634,56 @@
                 
                 // Send frame to server
                 if (this.socket && this.socket.connected) {
+                    this.processingFrame = true;
+                    this.frameStartTime = Date.now();
                     this.socket.emit('process_frame', { frame: frameData });
+                } else {
+                    // Continue processing even if socket disconnected
+                    setTimeout(() => this.processFrames(), this.frameInterval);
                 }
-                
-                // Continue processing
-                setTimeout(() => this.processFrames(), 100); // 10 FPS
             }
             
             handleDetectionResult(data) {
+                // Reset processing state and calculate adaptive frame rate
+                if (this.processingFrame) {
+                    this.processingFrame = false;
+                    const processingTime = Date.now() - this.frameStartTime;
+                    
+                    // Track frame rate
+                    const now = Date.now();
+                    this.recentFrameTimes.push(now);
+                    
+                    // Keep only last 10 frames for frame rate calculation
+                    if (this.recentFrameTimes.length > 10) {
+                        this.recentFrameTimes.shift();
+                    }
+                    
+                    // Update frame rate display every 2 seconds
+                    if (now - this.lastFrameRateUpdate > 2000 && this.recentFrameTimes.length >= 3) {
+                        const timeDiff = this.recentFrameTimes[this.recentFrameTimes.length - 1] - this.recentFrameTimes[0];
+                        const frameRate = ((this.recentFrameTimes.length - 1) * 1000 / timeDiff).toFixed(1);
+                        
+                        document.getElementById('frameRateText').textContent = `${frameRate} FPS`;
+                        document.getElementById('frameRateStatus').style.display = 'flex';
+                        this.lastFrameRateUpdate = now;
+                    }
+                    
+                    // Adaptive frame rate based on processing time
+                    if (processingTime > 300) {
+                        // Slow processing, reduce frame rate
+                        this.frameInterval = Math.min(this.frameInterval + 50, this.maxFrameInterval);
+                    } else if (processingTime < 100) {
+                        // Fast processing, increase frame rate
+                        this.frameInterval = Math.max(this.frameInterval - 25, this.minFrameInterval);
+                    }
+                    
+                    // Reset error counter on successful processing
+                    this.consecutiveErrors = 0;
+                    
+                    // Schedule next frame
+                    setTimeout(() => this.processFrames(), this.frameInterval);
+                }
+                
                 const overlay = document.getElementById('detectionOverlay');
                 overlay.innerHTML = '';
                 

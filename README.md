@@ -1,3 +1,14 @@
+---
+title: Flowing Vision - AI Leak Detection
+emoji: 💧
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+license: mit
+app_port: 7860
+---
+
 > 📖 🇪🇸 También disponible en español: [README.es.md](README.es.md)
 
 # Flowing Vision

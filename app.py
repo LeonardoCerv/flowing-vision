@@ -33,7 +33,7 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff'}
 
-socketio = SocketIO(app, cors_allowed_origins=["https://flowingvision.leonardocerv.hackclub.app", "http://localhost:*"], async_mode='threading')
+socketio = SocketIO(app, cors_allowed_origins=["https://flowingvision.leonardocerv.hackclub.app", "http://localhost:*", "https://huggingface.co/spaces/LeonardoCerv/flowing-vision"], async_mode='threading')
 
 # Global variables for model and database
 compiled_model = None
@@ -114,15 +114,19 @@ def process_frame(frame_data, session_id):
     global compiled_model, collection
     
     if compiled_model is None:
+        print("Model not loaded, cannot process frame")
         return None
     
     try:
+        start_time = time.time()
+        
         # Decode base64 frame
         frame_bytes = base64.b64decode(frame_data.split(',')[1])
         frame_np = np.frombuffer(frame_bytes, dtype=np.uint8)
         frame = cv2.imdecode(frame_np, cv2.IMREAD_COLOR)
         
         if frame is None:
+            print("Failed to decode frame data")
             return None
         
         h, w, _ = frame.shape
@@ -131,15 +135,23 @@ def process_frame(frame_data, session_id):
         frame_resized = cv2.resize(frame, (640, 640))
         input_data = np.expand_dims(frame_resized.transpose(2, 0, 1), axis=0).astype(np.float32) / 255.0
         
-        # Model inference (no thread lock)
+        # Model inference timing
+        inference_start = time.time()
         results = compiled_model([input_data])[compiled_model.output(0)]
+        inference_time = time.time() - inference_start
         
         detections = []
         
-        # Analyze confidence distribution for debugging
+        # Analyze confidence distribution for debugging (reduced logging)
         confidences = [result[4] for result in results[0]]
         max_confidence = max(confidences) if confidences else 0
-        print(f"Max confidence in real-time frame: {max_confidence:.4f}")
+        
+        # Only log when there's potential detection or every 30th frame to reduce spam
+        frame_counter = getattr(process_frame, 'counter', 0)
+        process_frame.counter = frame_counter + 1
+        
+        if max_confidence > CONFIDENCE_THRESHOLD or process_frame.counter % 30 == 0:
+            print(f"Frame {process_frame.counter}: Max confidence: {max_confidence:.4f}, Inference time: {inference_time:.3f}s")
         
         # Use configurable confidence threshold
         best_confidence = CONFIDENCE_THRESHOLD
@@ -208,6 +220,11 @@ def process_frame(frame_data, session_id):
                 # Reset when no leak detected - this allows the counter to go up again for next leak
                 session['leak_frames'] = 0
                 session['leak_detections'] = []
+        
+        # Log total processing time for performance monitoring
+        total_time = time.time() - start_time
+        if total_time > 0.5:  # Log slow frames
+            print(f"Slow frame processing: {total_time:.3f}s (inference: {inference_time:.3f}s)")
         
         return {
             'detections': detections,
@@ -425,7 +442,9 @@ def handle_connect():
         'leak_detections': [],
         'confirmed_leaks': [],
         'live_detection_active': False,
-        'in_queue': False
+        'in_queue': False,
+        'last_frame_time': 0,  # For frame rate limiting
+        'frame_count': 0  # Track total frames processed
     }
     emit('connected', {'session_id': session_id})
     print(f"Client connected: {session_id}")
@@ -531,12 +550,39 @@ def handle_frame(data):
         emit('error', {'message': 'Live detection not authorized'})
         return
     
-    result = process_frame(frame_data, session_id)
+    # Server-side frame rate limiting (max 8 FPS to prevent CPU overload)
+    current_time = time.time()
+    session = active_sessions[session_id]
+    time_since_last_frame = current_time - session.get('last_frame_time', 0)
     
-    if result:
-        emit('detection_result', result)
-    else:
+    if time_since_last_frame < 0.125:  # 8 FPS max (125ms between frames)
+        emit('error', {'message': 'Frame rate too high, please slow down'})
+        return
+    
+    session['last_frame_time'] = current_time
+    session['frame_count'] = session.get('frame_count', 0) + 1
+    
+    try:
+        # Add some basic frame validation
+        if not isinstance(frame_data, str) or len(frame_data) < 100:
+            emit('error', {'message': 'Invalid frame data format'})
+            return
+        
+        # Check if frame data is properly formatted base64
+        if not frame_data.startswith('data:image/'):
+            emit('error', {'message': 'Invalid frame data format'})
+            return
+        
+        result = process_frame(frame_data, session_id)
+        
+        if result:
+            emit('detection_result', result)
+        else:
+            emit('error', {'message': 'Failed to process frame'})
+            
+    except Exception as e:
         emit('error', {'message': 'Failed to process frame'})
+        print(f"Unexpected error in frame handler for session {session_id}: {str(e)}")
 
 @socketio.on('get_session_stats')
 def handle_get_stats():
@@ -583,29 +629,13 @@ if __name__ == '__main__':
     if compiled_model is None:
         print("Warning: Could not load OpenVINO model. Detection will not work.")
     
-    # Get port from environment variable, default to 8946
-    try:
-        port = int(os.getenv('PORT', '8946'))
-    except ValueError:
-        print("Warning: Invalid PORT value in environment. Using default port 8946.")
-        port = 8946
+    # For Hugging Face Spaces, use port 7860 and bind to all interfaces
+    port = int(os.getenv('PORT', '7860'))
+    host = '0.0.0.0'  # Bind to all interfaces for Hugging Face Spaces
     
-    # For production behind reverse proxy, bind to localhost only
-    host = '127.0.0.1'
+    print(f"Starting Flask-SocketIO server on http://{host}:{port}")
     
-    # Find an available port starting from the specified port
-    available_port = find_available_port(port, max_attempts=10, host=host)
+    # Disable debug mode for production deployment
+    debug_mode = False
     
-    if available_port is None:
-        print(f"Error: Could not find an available port starting from {port}")
-        exit(1)
-    
-    if available_port != port:
-        print(f"Warning: Port {port} was not available. Using port {available_port} instead.")
-    
-    print(f"Starting Flask-SocketIO server on http://{host}:{available_port}")
-    
-    # Check if running in production (you can set FLASK_ENV=production)
-    debug_mode = os.getenv('FLASK_ENV', 'development') == 'development'
-    
-    socketio.run(app, host=host, port=available_port, debug=debug_mode, allow_unsafe_werkzeug=True)
+    socketio.run(app, host=host, port=port, debug=debug_mode, allow_unsafe_werkzeug=True)
