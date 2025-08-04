@@ -1,3 +1,4 @@
+<!--
 ---
 title: Flowing Vision - AI Leak Detection
 emoji: 💧
@@ -8,6 +9,7 @@ pinned: false
 license: mit
 app_port: 7860
 ---
+-->
 
 > 📖 🇪🇸 También disponible en español: [README.es.md](README.es.md)
 
@@ -72,5 +74,5 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Run setup script (optional)
-chmod +x setup.sh
-./setup.sh
+python app.py
+```

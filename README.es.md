@@ -58,6 +58,5 @@ source venv/bin/activate  # En Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Ejecuta el script de configuración (opcional)
-chmod +x setup.sh
-./setup.sh
+python app.py
 ```
